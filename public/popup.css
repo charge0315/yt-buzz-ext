@@ -5,4 +5,8 @@ label { display:block; margin: 8px 0; }
 input[type=number] { width: 80px; }
 .actions { margin: 12px 0; }
 button { padding: 8px 12px; cursor: pointer; }
+.primary { background:#0b5fff; color:#fff; border:none; border-radius:6px; }
+.primary:disabled { opacity: .6; cursor: default; }
 .log { height: 180px; overflow:auto; background:#111; color:#0f0; padding:8px; border-radius: 6px; }
+label span { margin-right:6px; }
+main { box-sizing: border-box; }

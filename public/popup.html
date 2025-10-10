@@ -3,22 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>YT Buzz Ext</title>
+  <title><span class="i18n" data-msg="EXT_NAME">YT Buzz Ext</span></title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <main>
-      <h1>YT Buzz</h1>
+      <h1 class="i18n" data-msg="UI_TITLE">YT Buzz</h1>
       <label>
         <input type="checkbox" id="updateMode" checked />
-        既存プレイリストを更新（なければ作成）
+        <span class="i18n" data-msg="UI_UPDATE_MODE">既存プレイリストを更新（なければ作成）</span>
       </label>
       <label>
-        1チャンネルあたりの上限
+        <span class="i18n" data-msg="UI_LIMIT">1チャンネルあたりの上限</span>
         <input type="number" id="limit" min="1" max="50" value="10" />
       </label>
       <div class="actions">
-        <button id="runBtn">実行</button>
+        <button id="runBtn" class="primary i18n" data-msg="UI_RUN">実行</button>
       </div>
       <pre id="log" class="log"></pre>
     </main>

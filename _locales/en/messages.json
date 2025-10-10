@@ -1,0 +1,11 @@
+{
+  "EXT_NAME": { "message": "YT Buzz Ext" },
+  "EXT_DESC": { "message": "Chrome extension to gather latest Shorts from your subscriptions and create/update playlists." },
+  "UI_TITLE": { "message": "YT Buzz" },
+  "UI_UPDATE_MODE": { "message": "Update existing playlists (create if none)" },
+  "UI_LIMIT": { "message": "Limit per channel" },
+  "UI_RUN": { "message": "Run" },
+  "UI_SAVED": { "message": "Saved" },
+  "LOG_START": { "message": "Starting..." },
+  "LOG_DONE": { "message": "All done." }
+}

@@ -36,20 +36,29 @@ async function apiFetch(path, { method='GET', params={}, body, token }) {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(`API ${method} ${url.pathname}: ${res.status} ${res.statusText} ${text}`);
+    const err = new Error(`API ${method} ${url.pathname}: ${res.status} ${res.statusText} ${text}`);
+    err.status = res.status;
+    err.body = text;
+    throw err;
   }
   return res.json();
 }
 
-async function withRetry(fn, maxAttempts = 3, baseDelayMs = 1000) {
+async function withRetry(fn, maxAttempts = 5, baseDelayMs = 1000) {
   let attempt = 0;
   while (true) {
     try {
       return await fn();
     } catch (e) {
       attempt++;
-      if (attempt >= maxAttempts) throw e;
-      const delay = baseDelayMs * Math.pow(2, attempt-1) + Math.random()*250;
+      // Retry on 403 (rate/quota), 429, and 5xx; otherwise rethrow
+      const retryable = [403, 429].includes(e.status) || (e.status >= 500 && e.status < 600) || !e.status;
+      if (!retryable || attempt >= maxAttempts) {
+        sendLog(`エラー: ${e.message}`);
+        throw e;
+      }
+      const jitter = Math.random()*300;
+      const delay = baseDelayMs * Math.pow(2, attempt-1) + jitter;
       sendLog(`一時的なエラーのため再試行します（${attempt}/${maxAttempts-1}）: ${e.message}`);
       await new Promise(r => setTimeout(r, delay));
     }
@@ -222,11 +231,16 @@ async function runJob({ limit = 10, update = true } = {}) {
   const token = await getAuthTokenInteractive(true);
   const meSubs = await getMySubscriptions(token);
   sendLog(`登録チャンネルを取得: ${meSubs.length}件`);
+  let processed = 0;
   for (const sub of meSubs) {
     const channelId = sub?.snippet?.resourceId?.channelId;
     const channelTitle = sub?.snippet?.title;
     if (!channelId) continue;
     await createOrUpdateForChannel(token, channelId, channelTitle, { update, limit });
+    processed++;
+    if (processed % 5 === 0) {
+      sendLog(`進捗: ${processed}/${meSubs.length}`);
+    }
   }
   return { message: 'すべての処理が完了しました。' };
 }

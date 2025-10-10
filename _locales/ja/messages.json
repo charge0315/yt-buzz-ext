@@ -1,0 +1,11 @@
+{
+  "EXT_NAME": { "message": "YT Buzz Ext" },
+  "EXT_DESC": { "message": "YouTube の登録チャンネルからShortsを集め、プレイリストを作成/更新する Chrome 拡張。" },
+  "UI_TITLE": { "message": "YT Buzz" },
+  "UI_UPDATE_MODE": { "message": "既存プレイリストを更新（なければ作成）" },
+  "UI_LIMIT": { "message": "1チャンネルあたりの上限" },
+  "UI_RUN": { "message": "実行" },
+  "UI_SAVED": { "message": "保存しました" },
+  "LOG_START": { "message": "開始します…" },
+  "LOG_DONE": { "message": "すべての処理が完了しました。" }
+}
