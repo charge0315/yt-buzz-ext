@@ -4,54 +4,65 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>オプション - YT Buzz</title>
+    <link rel="stylesheet" href="options.css" />
   </head>
   <body>
-    <main>
-      <h1>既定の設定</h1>
-      <label>
-        1チャンネルあたりの上限
-        <input type="number" id="limit" min="1" max="50" />
-      </label>
-      <label>
-        <input type="checkbox" id="updateMode" /> 既存を更新
-      </label>
-      <label>
-        <input type="checkbox" id="dryRun" /> ドライラン（変更は実行しない）
-      </label>
-      <hr/>
-      <label>
-        <input type="checkbox" id="runOnStartup" /> <span class="i18n" data-msg="OPT_RUN_ON_STARTUP">Chrome 起動時に実行</span>
-      </label>
-      <label>
-        <span class="i18n" data-msg="OPT_DAILY">毎日 指定時刻 に実行</span>
-        <select id="dailyHour">
-          <option value="" class="i18n" data-msg="OPT_UNSET">未設定</option>
-          <script>
-            for (let h=0; h<24; h++) {
-              const opt = document.createElement('option');
-              opt.value = String(h);
-              const sfx = ' ' + (chrome.i18n?.getMessage('OPT_HOUR_SUFFIX') || '時');
-              opt.textContent = `${h}${sfx}`;
-              document.currentScript.parentElement.appendChild(opt);
-            }
-          </script>
-        </select>
-      </label>
-      <div style="margin:8px 0;">
-        <button id="runNow" class="i18n" data-msg="OPT_RUN_NOW">今すぐ実行</button>
+    <main class="container">
+      <h1 class="h5 mb-3">既定の設定</h1>
+
+      <div class="mb-3">
+        <label for="limit" class="form-label">1チャンネルあたりの上限</label>
+        <input type="number" class="form-control" id="limit" min="1" max="50" />
       </div>
-      <div>
-        <button id="save">保存</button>
+
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="updateMode" />
+        <label class="form-check-label" for="updateMode">既存を更新</label>
+      </div>
+
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="dryRun" />
+        <label class="form-check-label" for="dryRun">ドライラン（変更は実行しない）</label>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="runOnStartup" />
+            <label class="form-check-label" for="runOnStartup"><span class="i18n" data-msg="OPT_RUN_ON_STARTUP">Chrome 起動時に実行</span></label>
+          </div>
+          <div class="mb-3">
+            <label for="dailyHour" class="form-label"><span class="i18n" data-msg="OPT_DAILY">毎日 指定時刻 に実行</span></label>
+            <select id="dailyHour" class="form-select">
+              <option value="" class="i18n" data-msg="OPT_UNSET">未設定</option>
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button id="runNow" class="btn btn-secondary i18n" data-msg="OPT_RUN_NOW">今すぐ実行</button>
+            <button id="save" class="btn btn-primary">保存</button>
+          </div>
+        </div>
       </div>
     </main>
+
     <script type="module">
+      // populate hour options 0..23 with locale suffix
+      const dailyHourEl = document.getElementById('dailyHour');
+      const suffix = ' ' + (chrome.i18n?.getMessage('OPT_HOUR_SUFFIX') || '時');
+      for (let h=0; h<24; h++) {
+        const opt = document.createElement('option');
+        opt.value = String(h);
+        opt.textContent = `${h}${suffix}`;
+        dailyHourEl.appendChild(opt);
+      }
+
       const limitEl = document.getElementById('limit');
       const updateEl = document.getElementById('updateMode');
-  const saveBtn = document.getElementById('save');
-  const dryEl = document.getElementById('dryRun');
-  const startupEl = document.getElementById('runOnStartup');
-  const dailyHourEl = document.getElementById('dailyHour');
-  const runNowBtn = document.getElementById('runNow');
+      const saveBtn = document.getElementById('save');
+      const dryEl = document.getElementById('dryRun');
+      const startupEl = document.getElementById('runOnStartup');
+      const runNowBtn = document.getElementById('runNow');
+
       async function load() {
         const { limit=10, update=true, dryRun=false, runOnStartup=false, dailyHour='' } = await chrome.storage.sync.get(['limit','update','dryRun','runOnStartup','dailyHour']);
         limitEl.value = limit;
@@ -67,14 +78,14 @@
         const runOnStartup = !!startupEl.checked;
         const dailyHour = dailyHourEl.value === '' ? '' : Number(dailyHourEl.value);
         await chrome.storage.sync.set({ limit, update, dryRun, runOnStartup, dailyHour });
-  alert(chrome.i18n?.getMessage('OPT_SAVED') || '保存しました');
+        alert(chrome.i18n?.getMessage('OPT_SAVED') || '保存しました');
         // ask background to (re)schedule alarms
         chrome.runtime.sendMessage({ type: 'SCHEDULE_UPDATE' });
       }
       async function runNow() {
         const { limit=10, update=true, dryRun=false } = await chrome.storage.sync.get(['limit','update','dryRun']);
         await chrome.runtime.sendMessage({ type: 'RUN', payload: { limit, update, dryRun } });
-  alert(chrome.i18n?.getMessage('OPT_RUN_NOW_STARTED') || '実行を開始しました。ポップアップのログでご確認ください。');
+        alert(chrome.i18n?.getMessage('OPT_RUN_NOW_STARTED') || '実行を開始しました。ポップアップのログでご確認ください。');
       }
       // i18n apply (simple)
       for (const el of document.querySelectorAll('.i18n')) {
@@ -88,4 +99,4 @@
       load();
     </script>
   </body>
-</html>
+  </html>
