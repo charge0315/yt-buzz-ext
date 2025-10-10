@@ -147,7 +147,7 @@ async function fetchRecentShorts(token, uploadsPlaylistId, limit) {
   return out;
 }
 
-async function reorderPlaylistToMatch(token, playlistId, targetIds) {
+async function reorderPlaylistToMatch(token, playlistId, targetIds, { dryRun } = {}) {
   const items = await listPlaylistItems(token, playlistId);
   const map = new Map(items.map(it => [it.videoId, { id: it.playlistItemId, pos: it.position }]));
   let updated = 0;
@@ -156,18 +156,22 @@ async function reorderPlaylistToMatch(token, playlistId, targetIds) {
     if (!map.has(vid)) continue;
     const { id, pos } = map.get(vid);
     if (pos !== i) {
-      await withRetry(() => apiFetch('/playlistItems', {
-        token, method: 'PUT',
-        params: { part: 'snippet' },
-        body: { id, snippet: { playlistId, position: i } }
-      }));
+      if (dryRun) {
+        sendLog(`[DRY-RUN] 並び替え: ${vid} -> pos ${i}`);
+      } else {
+        await withRetry(() => apiFetch('/playlistItems', {
+          token, method: 'PUT',
+          params: { part: 'snippet' },
+          body: { id, snippet: { playlistId, position: i } }
+        }));
+      }
       updated++;
     }
   }
   return updated;
 }
 
-async function syncPlaylistItems(token, playlistId, targetIds) {
+async function syncPlaylistItems(token, playlistId, targetIds, { dryRun } = {}) {
   const items = await listPlaylistItems(token, playlistId);
   const currentIds = items.map(x => x.videoId);
   const idToItem = new Map(items.map(x => [x.videoId, x.playlistItemId]));
@@ -175,21 +179,29 @@ async function syncPlaylistItems(token, playlistId, targetIds) {
   const toRemove = currentIds.filter(v => !targetIds.includes(v));
 
   for (const vid of toAdd) {
-    await withRetry(() => apiFetch('/playlistItems', {
-      token, method: 'POST',
-      params: { part: 'snippet' },
-      body: { snippet: { playlistId, resourceId: { kind: 'youtube#video', videoId: vid } } }
-    }));
+    if (dryRun) {
+      sendLog(`[DRY-RUN] 追加: ${vid}`);
+    } else {
+      await withRetry(() => apiFetch('/playlistItems', {
+        token, method: 'POST',
+        params: { part: 'snippet' },
+        body: { snippet: { playlistId, resourceId: { kind: 'youtube#video', videoId: vid } } }
+      }));
+    }
   }
   for (const vid of toRemove) {
     const pid = idToItem.get(vid);
     if (!pid) continue;
-    await withRetry(() => apiFetch('/playlistItems', { token, method: 'DELETE', params: { id: pid } }));
+    if (dryRun) {
+      sendLog(`[DRY-RUN] 削除: ${vid} (playlistItemId=${pid})`);
+    } else {
+      await withRetry(() => apiFetch('/playlistItems', { token, method: 'DELETE', params: { id: pid } }));
+    }
   }
   return { add: toAdd.length, del: toRemove.length };
 }
 
-async function createOrUpdateForChannel(token, channelId, channelTitle, { update, limit }) {
+async function createOrUpdateForChannel(token, channelId, channelTitle, { update, limit, dryRun }) {
   const ch = await withRetry(() => apiFetch('/channels', { token, params: { part: 'contentDetails', id: channelId } }));
   const uploads = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
   if (!uploads) {
@@ -206,28 +218,32 @@ async function createOrUpdateForChannel(token, channelId, channelTitle, { update
     const existing = await findMyPlaylistByTitle(token, title);
     if (existing) {
       const pid = existing.id;
-      const { add, del } = await syncPlaylistItems(token, pid, shorts);
-      const reord = await reorderPlaylistToMatch(token, pid, shorts);
+      const { add, del } = await syncPlaylistItems(token, pid, shorts, { dryRun });
+      const reord = await reorderPlaylistToMatch(token, pid, shorts, { dryRun });
       sendLog(`- ${channelTitle}: 更新（追加 ${add} / 削除 ${del} / 並び替え ${reord}）`);
       return;
     }
   }
   const pl = await withRetry(() => apiFetch('/playlists', {
-    token, method: 'POST',
-    params: { part: 'snippet,status' },
-    body: { snippet: { title, description: `${channelTitle}の直近のShorts動画を集めた再生リストです。` }, status: { privacyStatus: 'private' } }
+    token, method: dryRun ? 'GET' : 'POST',
+    params: dryRun ? { part: 'snippet', mine: true, maxResults: 1 } : { part: 'snippet,status' },
+    body: dryRun ? undefined : { snippet: { title, description: `${channelTitle}の直近のShorts動画を集めた再生リストです。` }, status: { privacyStatus: 'private' } }
   }));
-  const newPid = pl.id;
-  for (const vid of shorts) {
-    await withRetry(() => apiFetch('/playlistItems', {
-      token, method: 'POST', params: { part: 'snippet' },
-      body: { snippet: { playlistId: newPid, resourceId: { kind: 'youtube#video', videoId: vid } } }
-    }));
+  if (dryRun) {
+    sendLog(`[DRY-RUN] 再生リスト作成: '${title}'（${shorts.length}件を追加予定）`);
+  } else {
+    const newPid = pl.id;
+    for (const vid of shorts) {
+      await withRetry(() => apiFetch('/playlistItems', {
+        token, method: 'POST', params: { part: 'snippet' },
+        body: { snippet: { playlistId: newPid, resourceId: { kind: 'youtube#video', videoId: vid } } }
+      }));
+    }
+    sendLog(`  -> 再生リスト '${title}' を作成しました。`);
   }
-  sendLog(`  -> 再生リスト '${title}' を作成しました。`);
 }
 
-async function runJob({ limit = 10, update = true } = {}) {
+async function runJob({ limit = 10, update = true, dryRun = false } = {}) {
   const token = await getAuthTokenInteractive(true);
   const meSubs = await getMySubscriptions(token);
   sendLog(`登録チャンネルを取得: ${meSubs.length}件`);
@@ -236,7 +252,7 @@ async function runJob({ limit = 10, update = true } = {}) {
     const channelId = sub?.snippet?.resourceId?.channelId;
     const channelTitle = sub?.snippet?.title;
     if (!channelId) continue;
-    await createOrUpdateForChannel(token, channelId, channelTitle, { update, limit });
+    await createOrUpdateForChannel(token, channelId, channelTitle, { update, limit, dryRun });
     processed++;
     if (processed % 5 === 0) {
       sendLog(`進捗: ${processed}/${meSubs.length}`);
@@ -249,8 +265,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
     if (msg?.type === 'RUN') {
       try {
-        const defaults = await chrome.storage.sync.get(['limit','update']);
-        const payload = Object.assign({ limit: defaults.limit ?? 10, update: defaults.update ?? true }, msg.payload || {});
+  const defaults = await chrome.storage.sync.get(['limit','update','dryRun']);
+  const payload = Object.assign({ limit: defaults.limit ?? 10, update: defaults.update ?? true, dryRun: !!(defaults.dryRun) }, msg.payload || {});
         const res = await runJob(payload);
         sendResponse(res);
       } catch (e) {

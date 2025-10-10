@@ -2,6 +2,7 @@ const logEl = document.getElementById('log');
 const runBtn = document.getElementById('runBtn');
 const limitEl = document.getElementById('limit');
 const updateEl = document.getElementById('updateMode');
+const dryRunEl = document.getElementById('dryRun');
 
 // i18n apply
 for (const el of document.querySelectorAll('.i18n')) {
@@ -29,7 +30,7 @@ runBtn.addEventListener('click', async () => {
     const update = updateEl.checked;
     const res = await chrome.runtime.sendMessage({
       type: 'RUN',
-      payload: { limit, update }
+      payload: { limit, update, dryRun: !!dryRunEl?.checked }
     });
     log(res?.message ?? (chrome.i18n.getMessage('LOG_DONE') || '完了'));
   } catch (e) {

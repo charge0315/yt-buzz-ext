@@ -5,6 +5,7 @@
   "UI_UPDATE_MODE": { "message": "Update existing playlists (create if none)" },
   "UI_LIMIT": { "message": "Limit per channel" },
   "UI_RUN": { "message": "Run" },
+  "UI_DRYRUN": { "message": "Dry run (no changes)" },
   "UI_SAVED": { "message": "Saved" },
   "LOG_START": { "message": "Starting..." },
   "LOG_DONE": { "message": "All done." }

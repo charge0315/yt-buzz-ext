@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><span class="i18n" data-msg="EXT_NAME">YT Buzz Ext</span></title>
+  <title class="i18n" data-msg="EXT_NAME">YT Buzz Ext</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -16,6 +16,9 @@
       <label>
         <span class="i18n" data-msg="UI_LIMIT">1チャンネルあたりの上限</span>
         <input type="number" id="limit" min="1" max="50" value="10" />
+      </label>
+      <label>
+        <input type="checkbox" id="dryRun" /> <span class="i18n" data-msg="UI_DRYRUN">ドライラン（変更は実行しない）</span>
       </label>
       <div class="actions">
         <button id="runBtn" class="primary i18n" data-msg="UI_RUN">実行</button>

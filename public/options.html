@@ -15,6 +15,9 @@
       <label>
         <input type="checkbox" id="updateMode" /> 既存を更新
       </label>
+      <label>
+        <input type="checkbox" id="dryRun" /> ドライラン（変更は実行しない）
+      </label>
       <div>
         <button id="save">保存</button>
       </div>
@@ -22,16 +25,19 @@
     <script type="module">
       const limitEl = document.getElementById('limit');
       const updateEl = document.getElementById('updateMode');
-      const saveBtn = document.getElementById('save');
+  const saveBtn = document.getElementById('save');
+  const dryEl = document.getElementById('dryRun');
       async function load() {
-        const { limit=10, update=true } = await chrome.storage.sync.get(['limit','update']);
+        const { limit=10, update=true, dryRun=false } = await chrome.storage.sync.get(['limit','update','dryRun']);
         limitEl.value = limit;
         updateEl.checked = update;
+        dryEl.checked = !!dryRun;
       }
       async function save() {
         const limit = Math.max(1, Math.min(50, Number(limitEl.value) || 10));
         const update = !!updateEl.checked;
-        await chrome.storage.sync.set({ limit, update });
+        const dryRun = !!dryEl.checked;
+        await chrome.storage.sync.set({ limit, update, dryRun });
         alert('保存しました');
       }
       saveBtn.addEventListener('click', save);

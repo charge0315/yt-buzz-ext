@@ -5,6 +5,7 @@
   "UI_UPDATE_MODE": { "message": "既存プレイリストを更新（なければ作成）" },
   "UI_LIMIT": { "message": "1チャンネルあたりの上限" },
   "UI_RUN": { "message": "実行" },
+  "UI_DRYRUN": { "message": "ドライラン（変更は実行しない）" },
   "UI_SAVED": { "message": "保存しました" },
   "LOG_START": { "message": "開始します…" },
   "LOG_DONE": { "message": "すべての処理が完了しました。" }
