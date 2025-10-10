@@ -1,13 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
   <defs>
-    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0%" stop-color="#0b5fff"/>
-      <stop offset="100%" stop-color="#00c2ff"/>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAD0E4"/>
+      <stop offset="100%" stop-color="#F8BBD0"/>
     </linearGradient>
+    <filter id="dropshadow" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+      <feOffset dx="2" dy="3" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.35"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect x="0" y="0" width="256" height="256" rx="32" fill="url(#g)"/>
-  <g fill="#fff">
-    <path d="M128 56c-39 0-72 33-72 72s33 72 72 72 72-33 72-72-33-72-72-72zm0 20c28.7 0 52 23.3 52 52s-23.3 52-52 52-52-23.3-52-52 23.3-52 52-52z" opacity="0.85"/>
-    <path d="M112 96l48 32-48 32V96z"/>
+
+  <!-- Folder tab -->
+  <rect x="28" y="36" rx="10" ry="10" width="110" height="34" fill="url(#g)" stroke="#F48FB1" stroke-width="2"/>
+
+  <!-- Folder body with shadow -->
+  <g filter="url(#dropshadow)">
+    <rect x="20" y="70" rx="14" ry="14" width="216" height="156" fill="url(#g)" stroke="#F48FB1" stroke-width="2"/>
+  </g>
+
+  <!-- Video card inside folder -->
+  <rect x="44" y="112" rx="10" ry="10" width="120" height="56" fill="#ffffff" stroke="#cccccc" stroke-width="2"/>
+
+  <!-- YouTube play badge (front) -->
+  <g filter="url(#dropshadow)">
+    <rect x="140" y="152" rx="16" ry="16" width="96" height="64" fill="#FF0000" stroke="#B00000" stroke-width="2"/>
+    <polygon points="172,168 172,200 208,184" fill="#ffffff"/>
   </g>
 </svg>
