@@ -93,11 +93,11 @@ if ($magick -or $inkscape) {
     $gfx.FillRectangle($vidBrush, $vidX, $vidY, $vidW, $vidH)
     $gfx.DrawRectangle($vidPen, $vidX, $vidY, $vidW, $vidH)
 
-    # Foreground YouTube play badge (rectangle)
-    $playW = [math]::Round($s * 0.50)
-    $playH = [math]::Round($s * 0.36)
-    $playX = $bodyX + $bodyW - $playW - [math]::Round($s*0.06)
-    $playY = $bodyY + $bodyH - $playH - [math]::Round($s*0.06)
+  # Foreground YouTube play badge (rectangle) - center of canvas
+  $playW = [math]::Round($s * 0.50)
+  $playH = [math]::Round($s * 0.36)
+  $playX = [math]::Round(($s - $playW) / 2)
+  $playY = [math]::Round(($s - $playH) / 2)
     $playBrush = New-Object System.Drawing.SolidBrush $ytRed
     $playPen = New-Object System.Drawing.Pen -ArgumentList ([System.Drawing.Color]::FromArgb(220, 180, 0, 0)), ([math]::Max(1, $s*0.02))
     # play badge shadow
