@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>オプション - YT Buzz</title>
+  </head>
+  <body>
+    <main>
+      <h1>既定の設定</h1>
+      <label>
+        1チャンネルあたりの上限
+        <input type="number" id="limit" min="1" max="50" />
+      </label>
+      <label>
+        <input type="checkbox" id="updateMode" /> 既存を更新
+      </label>
+      <div>
+        <button id="save">保存</button>
+      </div>
+    </main>
+    <script type="module">
+      const limitEl = document.getElementById('limit');
+      const updateEl = document.getElementById('updateMode');
+      const saveBtn = document.getElementById('save');
+      async function load() {
+        const { limit=10, update=true } = await chrome.storage.sync.get(['limit','update']);
+        limitEl.value = limit;
+        updateEl.checked = update;
+      }
+      async function save() {
+        const limit = Math.max(1, Math.min(50, Number(limitEl.value) || 10));
+        const update = !!updateEl.checked;
+        await chrome.storage.sync.set({ limit, update });
+        alert('保存しました');
+      }
+      saveBtn.addEventListener('click', save);
+      load();
+    </script>
+  </body>
+</html>

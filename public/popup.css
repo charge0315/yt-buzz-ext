@@ -1,0 +1,8 @@
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+main { width: 320px; padding: 12px; }
+h1 { font-size: 16px; margin: 0 0 8px; }
+label { display:block; margin: 8px 0; }
+input[type=number] { width: 80px; }
+.actions { margin: 12px 0; }
+button { padding: 8px 12px; cursor: pointer; }
+.log { height: 180px; overflow:auto; background:#111; color:#0f0; padding:8px; border-radius: 6px; }

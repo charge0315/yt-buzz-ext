@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "YT Buzz Ext",
+  "version": "0.1.0",
+  "description": "YouTube の登録チャンネルからShortsを集め、プレイリストを作成/更新する Chrome 拡張。",
+  "action": {
+    "default_title": "YT Buzz Ext",
+    "default_popup": "public/popup.html"
+  },
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "oauth2": {
+    "client_id": "YOUR_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/youtube"
+    ]
+  },
+  "permissions": [
+    "identity",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.googleapis.com/*",
+    "https://accounts.google.com/*"
+  ],
+  "options_page": "public/options.html",
+  "icons": {
+    "16": "public/icons/icon16.png",
+    "32": "public/icons/icon32.png",
+    "48": "public/icons/icon48.png",
+    "128": "public/icons/icon128.png"
+  }
+}
