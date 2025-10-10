@@ -126,25 +126,27 @@ async function findMyPlaylistByTitle(token, title) {
   return null;
 }
 
-async function fetchRecentShorts(token, uploadsPlaylistId, limit) {
+async function fetchRecentVideos(token, uploadsPlaylistId, limit) {
   const pl = await withRetry(() => apiFetch('/playlistItems', {
     token,
     params: { part: 'contentDetails', playlistId: uploadsPlaylistId, maxResults: 50 }
   }));
   const orderedIds = (pl.items || []).map(i => i.contentDetails?.videoId).filter(Boolean);
   if (!orderedIds.length) return [];
-  const videos = await withRetry(() => apiFetch('/videos', {
+  return orderedIds.slice(0, Math.max(0, Math.min(limit, 50)));
+}
+
+async function fetchLatestVideo(token, uploadsPlaylistId) {
+  const pl = await withRetry(() => apiFetch('/playlistItems', {
     token,
-    params: { part: 'contentDetails', id: orderedIds.join(',') }
+    params: { part: 'contentDetails', playlistId: uploadsPlaylistId, maxResults: 1 }
   }));
-  const idToDur = new Map((videos.items || []).map(v => [v.id, v.contentDetails?.duration]));
-  const out = [];
-  for (const vid of orderedIds) {
-    const d = idToDur.get(vid);
-    if (d && durationToSeconds(d) <= 61) out.push(vid);
-    if (out.length >= limit) break;
-  }
-  return out;
+  const it = pl.items?.[0];
+  if (!it) return null;
+  const vid = it.contentDetails?.videoId;
+  const publishedAt = it.contentDetails?.videoPublishedAt || null;
+  if (!vid) return null;
+  return { videoId: vid, publishedAt };
 }
 
 async function reorderPlaylistToMatch(token, playlistId, targetIds, { dryRun } = {}) {
@@ -208,18 +210,18 @@ async function createOrUpdateForChannel(token, channelId, channelTitle, { update
     sendLog(`エラー: チャンネルID ${channelId} が見つかりません。`);
     return;
   }
-  const shorts = await fetchRecentShorts(token, uploads, limit);
-  if (!shorts.length) {
-    sendLog(`- ${channelTitle}: 直近のShorts動画が見つかりませんでした。`);
+  const vids = await fetchRecentVideos(token, uploads, limit);
+  if (!vids.length) {
+    sendLog(`- ${channelTitle}: 直近の動画が見つかりませんでした。`);
     return;
   }
-  const title = `${channelTitle} - 最新Shorts`;
+  const title = `${channelTitle} - 最新動画`;
   if (update) {
     const existing = await findMyPlaylistByTitle(token, title);
     if (existing) {
       const pid = existing.id;
-      const { add, del } = await syncPlaylistItems(token, pid, shorts, { dryRun });
-      const reord = await reorderPlaylistToMatch(token, pid, shorts, { dryRun });
+      const { add, del } = await syncPlaylistItems(token, pid, vids, { dryRun });
+      const reord = await reorderPlaylistToMatch(token, pid, vids, { dryRun });
       sendLog(`- ${channelTitle}: 更新（追加 ${add} / 削除 ${del} / 並び替え ${reord}）`);
       return;
     }
@@ -227,13 +229,13 @@ async function createOrUpdateForChannel(token, channelId, channelTitle, { update
   const pl = await withRetry(() => apiFetch('/playlists', {
     token, method: dryRun ? 'GET' : 'POST',
     params: dryRun ? { part: 'snippet', mine: true, maxResults: 1 } : { part: 'snippet,status' },
-    body: dryRun ? undefined : { snippet: { title, description: `${channelTitle}の直近のShorts動画を集めた再生リストです。` }, status: { privacyStatus: 'private' } }
+    body: dryRun ? undefined : { snippet: { title, description: `${channelTitle}の直近の動画を集めた再生リストです。` }, status: { privacyStatus: 'private' } }
   }));
   if (dryRun) {
-    sendLog(`[DRY-RUN] 再生リスト作成: '${title}'（${shorts.length}件を追加予定）`);
+    sendLog(`[DRY-RUN] 再生リスト作成: '${title}'（${vids.length}件を追加予定）`);
   } else {
     const newPid = pl.id;
-    for (const vid of shorts) {
+    for (const vid of vids) {
       await withRetry(() => apiFetch('/playlistItems', {
         token, method: 'POST', params: { part: 'snippet' },
         body: { snippet: { playlistId: newPid, resourceId: { kind: 'youtube#video', videoId: vid } } }
@@ -243,20 +245,81 @@ async function createOrUpdateForChannel(token, channelId, channelTitle, { update
   }
 }
 
+async function createOrUpdateAggregatePlaylist(token, latestItems, { title = '登録チャンネル - 最新', dryRun = false, update = true } = {}) {
+  // latestItems: Array<{ videoId, publishedAt }>
+  if (!latestItems.length) {
+    sendLog('集約用: 追加対象の最新動画がありません。');
+    return;
+  }
+  // sort by publishedAt desc when available
+  latestItems.sort((a,b) => {
+    const ta = a.publishedAt ? Date.parse(a.publishedAt) : 0;
+    const tb = b.publishedAt ? Date.parse(b.publishedAt) : 0;
+    return tb - ta;
+  });
+  const targetIds = latestItems.map(x => x.videoId);
+
+  if (update) {
+    const existing = await findMyPlaylistByTitle(token, title);
+    if (existing) {
+      const pid = existing.id;
+      const { add, del } = await syncPlaylistItems(token, pid, targetIds, { dryRun });
+      const reord = await reorderPlaylistToMatch(token, pid, targetIds, { dryRun });
+      sendLog(`- 集約: 更新（追加 ${add} / 削除 ${del} / 並び替え ${reord}）`);
+      return;
+    }
+  }
+  const pl = await withRetry(() => apiFetch('/playlists', {
+    token, method: dryRun ? 'GET' : 'POST',
+    params: dryRun ? { part: 'snippet', mine: true, maxResults: 1 } : { part: 'snippet,status' },
+    body: dryRun ? undefined : { snippet: { title, description: `登録チャンネルの最新動画を集めた再生リストです。` }, status: { privacyStatus: 'private' } }
+  }));
+  if (dryRun) {
+    sendLog(`[DRY-RUN] 集約再生リスト作成: '${title}'（${targetIds.length}件を追加予定）`);
+  } else {
+    const newPid = pl.id;
+    for (const vid of targetIds) {
+      await withRetry(() => apiFetch('/playlistItems', {
+        token, method: 'POST', params: { part: 'snippet' },
+        body: { snippet: { playlistId: newPid, resourceId: { kind: 'youtube#video', videoId: vid } } }
+      }));
+    }
+    sendLog(`  -> 集約再生リスト '${title}' を作成しました。`);
+  }
+}
+
 async function runJob({ limit = 10, update = true, dryRun = false } = {}) {
   const token = await getAuthTokenInteractive(true);
   const meSubs = await getMySubscriptions(token);
   sendLog(`登録チャンネルを取得: ${meSubs.length}件`);
+  const aggregate = [];
   let processed = 0;
   for (const sub of meSubs) {
     const channelId = sub?.snippet?.resourceId?.channelId;
     const channelTitle = sub?.snippet?.title;
     if (!channelId) continue;
     await createOrUpdateForChannel(token, channelId, channelTitle, { update, limit, dryRun });
+    try {
+      // collect latest one per channel for aggregate list
+      const ch = await withRetry(() => apiFetch('/channels', { token, params: { part: 'contentDetails', id: channelId } }));
+      const uploads = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+      if (uploads) {
+        const latest = await fetchLatestVideo(token, uploads);
+        if (latest?.videoId) aggregate.push(latest);
+      }
+    } catch (e) {
+      // non-fatal for aggregate
+    }
     processed++;
     if (processed % 5 === 0) {
       sendLog(`進捗: ${processed}/${meSubs.length}`);
     }
+  }
+  // finalize aggregate playlist
+  try {
+    await createOrUpdateAggregatePlaylist(token, aggregate, { title: '登録チャンネル - 最新', dryRun, update });
+  } catch (e) {
+    sendLog(`集約プレイリスト作成/更新エラー: ${e?.message || e}`);
   }
   return { message: 'すべての処理が完了しました。' };
 }
