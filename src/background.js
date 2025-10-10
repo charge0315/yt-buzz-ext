@@ -274,6 +274,56 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
       return;
     }
+    if (msg?.type === 'SCHEDULE_UPDATE') {
+      await scheduleFromSettings();
+      sendResponse({ ok: true });
+      return;
+    }
   })();
   return true; // async
 });
+
+chrome.runtime.onInstalled.addListener(async () => {
+  await scheduleFromSettings();
+});
+
+chrome.runtime.onStartup.addListener(async () => {
+  const { runOnStartup=false } = await chrome.storage.sync.get(['runOnStartup']);
+  if (runOnStartup) {
+    try {
+      const defaults = await chrome.storage.sync.get(['limit','update','dryRun']);
+      await runJob({ limit: defaults.limit ?? 10, update: defaults.update ?? true, dryRun: !!defaults.dryRun });
+    } catch (e) {
+      sendLog(`起動時実行エラー: ${e?.message || e}`);
+    }
+  }
+});
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm?.name === 'daily-run') {
+    try {
+      const defaults = await chrome.storage.sync.get(['limit','update','dryRun']);
+      await runJob({ limit: defaults.limit ?? 10, update: defaults.update ?? true, dryRun: !!defaults.dryRun });
+    } catch (e) {
+      sendLog(`スケジュール実行エラー: ${e?.message || e}`);
+    }
+  }
+});
+
+async function scheduleFromSettings() {
+  const { dailyHour='' } = await chrome.storage.sync.get(['dailyHour']);
+  await chrome.alarms.clear('daily-run');
+  if (dailyHour === '' || dailyHour === null || dailyHour === undefined) {
+    return;
+  }
+  const h = Number(dailyHour);
+  // schedule: first fire at next selected hour in local time, then every 24 hours
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, 0, 0, 0);
+  if (first <= now) {
+    first.setDate(first.getDate() + 1);
+  }
+  const delayMinutes = Math.ceil((first.getTime() - now.getTime()) / 60000);
+  await chrome.alarms.create('daily-run', { delayInMinutes: Math.max(1, delayMinutes), periodInMinutes: 24*60 });
+  sendLog(`毎日スケジュール設定: ${h}時（初回まで約${delayMinutes}分）`);
+}
