@@ -20,24 +20,25 @@
       </label>
       <hr/>
       <label>
-        <input type="checkbox" id="runOnStartup" /> Chrome 起動時に実行
+        <input type="checkbox" id="runOnStartup" /> <span class="i18n" data-msg="OPT_RUN_ON_STARTUP">Chrome 起動時に実行</span>
       </label>
       <label>
-        毎日 指定時刻 に実行
+        <span class="i18n" data-msg="OPT_DAILY">毎日 指定時刻 に実行</span>
         <select id="dailyHour">
-          <option value="">未設定</option>
+          <option value="" class="i18n" data-msg="OPT_UNSET">未設定</option>
           <script>
             for (let h=0; h<24; h++) {
               const opt = document.createElement('option');
               opt.value = String(h);
-              opt.textContent = `${h} 時`;
+              const sfx = ' ' + (chrome.i18n?.getMessage('OPT_HOUR_SUFFIX') || '時');
+              opt.textContent = `${h}${sfx}`;
               document.currentScript.parentElement.appendChild(opt);
             }
           </script>
         </select>
       </label>
       <div style="margin:8px 0;">
-        <button id="runNow">今すぐ実行</button>
+        <button id="runNow" class="i18n" data-msg="OPT_RUN_NOW">今すぐ実行</button>
       </div>
       <div>
         <button id="save">保存</button>
@@ -66,14 +67,21 @@
         const runOnStartup = !!startupEl.checked;
         const dailyHour = dailyHourEl.value === '' ? '' : Number(dailyHourEl.value);
         await chrome.storage.sync.set({ limit, update, dryRun, runOnStartup, dailyHour });
-        alert('保存しました');
+  alert(chrome.i18n?.getMessage('OPT_SAVED') || '保存しました');
         // ask background to (re)schedule alarms
         chrome.runtime.sendMessage({ type: 'SCHEDULE_UPDATE' });
       }
       async function runNow() {
         const { limit=10, update=true, dryRun=false } = await chrome.storage.sync.get(['limit','update','dryRun']);
         await chrome.runtime.sendMessage({ type: 'RUN', payload: { limit, update, dryRun } });
-        alert('実行を開始しました。ポップアップのログでご確認ください。');
+  alert(chrome.i18n?.getMessage('OPT_RUN_NOW_STARTED') || '実行を開始しました。ポップアップのログでご確認ください。');
+      }
+      // i18n apply (simple)
+      for (const el of document.querySelectorAll('.i18n')) {
+        const key = el.getAttribute('data-msg');
+        if (!key) continue;
+        const msg = chrome.i18n?.getMessage(key);
+        if (msg) el.textContent = msg;
       }
       saveBtn.addEventListener('click', save);
       runNowBtn.addEventListener('click', runNow);

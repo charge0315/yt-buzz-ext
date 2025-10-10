@@ -6,6 +6,13 @@
   "UI_LIMIT": { "message": "Limit per channel" },
   "UI_RUN": { "message": "Run" },
   "UI_DRYRUN": { "message": "Dry run (no changes)" },
+  "OPT_RUN_ON_STARTUP": { "message": "Run on Chrome startup" },
+  "OPT_DAILY": { "message": "Run daily at" },
+  "OPT_UNSET": { "message": "Unset" },
+  "OPT_HOUR_SUFFIX": { "message": " h" },
+  "OPT_RUN_NOW": { "message": "Run now" },
+  "OPT_SAVED": { "message": "Saved" },
+  "OPT_RUN_NOW_STARTED": { "message": "Started. Check popup log." },
   "UI_SAVED": { "message": "Saved" },
   "LOG_START": { "message": "Starting..." },
   "LOG_DONE": { "message": "All done." }

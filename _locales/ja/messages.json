@@ -6,7 +6,13 @@
   "UI_LIMIT": { "message": "1チャンネルあたりの上限" },
   "UI_RUN": { "message": "実行" },
   "UI_DRYRUN": { "message": "ドライラン（変更は実行しない）" },
-  "UI_SAVED": { "message": "保存しました" },
+  "OPT_RUN_ON_STARTUP": { "message": "Chrome 起動時に実行" },
+  "OPT_DAILY": { "message": "毎日 指定時刻 に実行" },
+  "OPT_UNSET": { "message": "未設定" },
+  "OPT_HOUR_SUFFIX": { "message": " 時" },
+  "OPT_RUN_NOW": { "message": "今すぐ実行" },
+  "OPT_SAVED": { "message": "保存しました" },
+  "OPT_RUN_NOW_STARTED": { "message": "実行を開始しました。ポップアップのログでご確認ください。" },
   "LOG_START": { "message": "開始します…" },
   "LOG_DONE": { "message": "すべての処理が完了しました。" }
 }
