@@ -18,7 +18,7 @@ function Find-Tool {
 $magick = Find-Tool 'magick'
 $inkscape = Find-Tool 'inkscape'
 
-$OutDir = Join-Path $PSScriptRoot '..' 'public' 'icons'
+$OutDir = [System.IO.Path]::Combine($PSScriptRoot, '..', 'public', 'icons')
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 
 $Sizes = @(16,32,48,128)
@@ -28,15 +28,32 @@ if (-not (Test-Path $SourceSvg)) {
   exit 1
 }
 
-foreach ($s in $Sizes) {
-  $out = Join-Path $OutDir "icon$s.png"
-  if ($magick) {
-    & $magick convert -background none $SourceSvg -resize ${s}x${s} $out
-  } elseif ($inkscape) {
-    & $inkscape $SourceSvg --export-type=png --export-filename=$out -w $s -h $s
-  } else {
-    Write-Host "Neither ImageMagick nor Inkscape is available. Please install one of them." -ForegroundColor Yellow
-    exit 2
+# 優先: ImageMagick / Inkscape。どちらも無ければ PowerShell でプレースホルダーを生成。
+if ($magick -or $inkscape) {
+  foreach ($s in $Sizes) {
+    $out = Join-Path $OutDir "icon$s.png"
+    if ($magick) {
+      & $magick convert -background none $SourceSvg -resize ${s}x${s} $out
+    } else {
+      & $inkscape $SourceSvg --export-type=png --export-filename=$out -w $s -h $s
+    }
+    Write-Host "Generated: $out"
   }
-  Write-Host "Generated: $out"
+} else {
+  Write-Host "Neither ImageMagick nor Inkscape is available. Generating placeholder PNGs via System.Drawing..." -ForegroundColor Yellow
+  Add-Type -AssemblyName System.Drawing
+  foreach ($s in $Sizes) {
+    $out = Join-Path $OutDir "icon$s.png"
+    $bmp = New-Object System.Drawing.Bitmap $s, $s
+    $gfx = [System.Drawing.Graphics]::FromImage($bmp)
+    # 背景色（Material ピンク系）
+    $gfx.Clear([System.Drawing.Color]::FromArgb(255, 233, 30, 99))
+    # 単純な余白付き枠線
+    $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(255,255,255,255)), ([math]::Max(1, [math]::Round($s*0.08)))
+    $margin = [math]::Round($s*0.08)
+    $gfx.DrawRectangle($pen, $margin, $margin, $s - 2*$margin, $s - 2*$margin)
+    $bmp.Save($out, [System.Drawing.Imaging.ImageFormat]::Png)
+    $gfx.Dispose(); $pen.Dispose(); $bmp.Dispose()
+    Write-Host "Generated placeholder: $out"
+  }
 }
