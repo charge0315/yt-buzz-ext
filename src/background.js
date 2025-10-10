@@ -215,7 +215,7 @@ async function createOrUpdateForChannel(token, channelId, channelTitle, { update
     sendLog(`- ${channelTitle}: 直近の動画が見つかりませんでした。`);
     return;
   }
-  const title = `${channelTitle} - 最新動画`;
+  const title = `${channelTitle} - 最新Movie`;
   if (update) {
     const existing = await findMyPlaylistByTitle(token, title);
     if (existing) {
