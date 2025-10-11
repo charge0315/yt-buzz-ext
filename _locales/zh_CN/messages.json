@@ -1,0 +1,18 @@
+{
+  "EXT_NAME": { "message": "YT Buzz Ext" },
+  "EXT_DESC": { "message": "Automatically create and update YouTube playlists from your subscribed channels." },
+  "UI_TITLE": { "message": "YT Buzz" },
+  "UI_UPDATE_MODE": { "message": "Update existing playlists (create if not exists)" },
+  "UI_LIMIT": { "message": "Videos per channel" },
+  "UI_RUN": { "message": "Run" },
+  "UI_DRYRUN": { "message": "Dry run (no changes)" },
+  "OPT_RUN_ON_STARTUP": { "message": "Run on browser startup" },
+  "OPT_DAILY": { "message": "Run daily at" },
+  "OPT_UNSET": { "message": "Not set" },
+  "OPT_HOUR_SUFFIX": { "message": ":00" },
+  "OPT_RUN_NOW": { "message": "Run Now" },
+  "OPT_SAVED": { "message": "Settings saved!" },
+  "OPT_RUN_NOW_STARTED": { "message": "Job started. Check popup log for details." },
+  "LOG_START": { "message": "Starting..." },
+  "LOG_DONE": { "message": "All processing completed!" }
+}

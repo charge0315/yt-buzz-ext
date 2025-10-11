@@ -1,0 +1,18 @@
+{
+  "EXT_NAME": { "message": "YT Buzz Ext" },
+  "EXT_DESC": { "message": "自动从订阅频道创建和更新YouTube播放列表。" },
+  "UI_TITLE": { "message": "YT Buzz" },
+  "UI_UPDATE_MODE": { "message": "更新现有播放列表(不存在则创建)" },
+  "UI_LIMIT": { "message": "每个频道的视频数量" },
+  "UI_RUN": { "message": "运行" },
+  "UI_DRYRUN": { "message": "试运行(不执行更改)" },
+  "OPT_RUN_ON_STARTUP": { "message": "浏览器启动时运行" },
+  "OPT_DAILY": { "message": "每天定时运行" },
+  "OPT_UNSET": { "message": "未设置" },
+  "OPT_HOUR_SUFFIX": { "message": "点" },
+  "OPT_RUN_NOW": { "message": "立即运行" },
+  "OPT_SAVED": { "message": "设置已保存!" },
+  "OPT_RUN_NOW_STARTED": { "message": "任务已开始。请查看弹出窗口日志以获取详细信息。" },
+  "LOG_START": { "message": "开始..." },
+  "LOG_DONE": { "message": "所有处理已完成!" }
+}

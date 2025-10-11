@@ -1,0 +1,18 @@
+{
+  "EXT_NAME": { "message": "YT Buzz Ext" },
+  "EXT_DESC": { "message": "Erstellen und aktualisieren Sie automatisch YouTube-Playlists aus Ihren abonnierten Kanälen." },
+  "UI_TITLE": { "message": "YT Buzz" },
+  "UI_UPDATE_MODE": { "message": "Vorhandene Playlists aktualisieren (erstellen, falls nicht vorhanden)" },
+  "UI_LIMIT": { "message": "Videos pro Kanal" },
+  "UI_RUN": { "message": "Ausführen" },
+  "UI_DRYRUN": { "message": "Probelauf (keine Änderungen)" },
+  "OPT_RUN_ON_STARTUP": { "message": "Beim Browserstart ausführen" },
+  "OPT_DAILY": { "message": "Täglich ausführen um" },
+  "OPT_UNSET": { "message": "Nicht festgelegt" },
+  "OPT_HOUR_SUFFIX": { "message": " Uhr" },
+  "OPT_RUN_NOW": { "message": "Jetzt ausführen" },
+  "OPT_SAVED": { "message": "Einstellungen gespeichert!" },
+  "OPT_RUN_NOW_STARTED": { "message": "Aufgabe gestartet. Prüfen Sie das Popup-Protokoll für Details." },
+  "LOG_START": { "message": "Starten..." },
+  "LOG_DONE": { "message": "Alle Verarbeitungen abgeschlossen!" }
+}

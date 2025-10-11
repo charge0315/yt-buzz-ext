@@ -1,0 +1,50 @@
+{
+  "name": "yt-buzz-ext",
+  "version": "0.1.0",
+  "description": "YouTube subscription playlist manager - Chrome extension for creating and updating playlists from subscribed channels",
+  "private": true,
+  "scripts": {
+    "dev": "webpack --mode development --watch",
+    "build": "webpack --mode production",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/ --ext .js",
+    "lint:fix": "eslint src/ --ext .js --fix",
+    "format": "prettier --write \"src/**/*.{js,json,css,html}\" \"public/**/*.{css,html}\" \"_locales/**/*.json\"",
+    "format:check": "prettier --check \"src/**/*.{js,json,css,html}\" \"public/**/*.{css,html}\" \"_locales/**/*.json\"",
+    "package": "node scripts/package.js",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "youtube",
+    "chrome-extension",
+    "playlist",
+    "automation"
+  ],
+  "author": "charge0315",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.23.2",
+    "@babel/preset-env": "^7.23.2",
+    "@types/chrome": "^0.0.254",
+    "@types/jest": "^29.5.7",
+    "babel-jest": "^29.7.0",
+    "babel-loader": "^9.1.3",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-jest": "^27.4.3",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "prettier": "^3.0.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "zip-webpack-plugin": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

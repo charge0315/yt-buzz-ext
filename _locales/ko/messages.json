@@ -1,0 +1,18 @@
+{
+  "EXT_NAME": { "message": "YT Buzz Ext" },
+  "EXT_DESC": { "message": "구독한 채널에서 YouTube 재생목록을 자동으로 생성하고 업데이트합니다." },
+  "UI_TITLE": { "message": "YT Buzz" },
+  "UI_UPDATE_MODE": { "message": "기존 재생목록 업데이트(없으면 생성)" },
+  "UI_LIMIT": { "message": "채널당 동영상 수" },
+  "UI_RUN": { "message": "실행" },
+  "UI_DRYRUN": { "message": "시험 실행(변경 없음)" },
+  "OPT_RUN_ON_STARTUP": { "message": "브라우저 시작 시 실행" },
+  "OPT_DAILY": { "message": "매일 정해진 시간에 실행" },
+  "OPT_UNSET": { "message": "설정 안 함" },
+  "OPT_HOUR_SUFFIX": { "message": "시" },
+  "OPT_RUN_NOW": { "message": "지금 실행" },
+  "OPT_SAVED": { "message": "설정이 저장되었습니다!" },
+  "OPT_RUN_NOW_STARTED": { "message": "작업이 시작되었습니다. 팝업 로그에서 자세한 내용을 확인하세요." },
+  "LOG_START": { "message": "시작 중..." },
+  "LOG_DONE": { "message": "모든 처리가 완료되었습니다!" }
+}

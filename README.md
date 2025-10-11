@@ -1,17 +1,54 @@
 # yt-buzz-ext
 
+[![CI](https://github.com/charge0315/yt-buzz-ext/actions/workflows/ci.yml/badge.svg)](https://github.com/charge0315/yt-buzz-ext/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 YouTube の「登録チャンネル」を走査し、各チャンネルの直近の動画を集めて
 「<チャンネル名> - 最新Movie」プレイリストを作成 or 更新する Chrome 拡張（Manifest V3）です。
 
-## 主な機能
+プロフェッショナルなアーキテクチャ、包括的なテスト、CI/CD、多言語対応を備えた本格的な Chrome 拡張機能です。
 
-- 登録チャンネルごとに、直近の動画を最大 N 件（上限は 50 まで）収集
-- 既存プレイリストがあれば更新（不足の追加・不要の削除・順序整列）、なければ作成
-- ドライラン（実際の変更を行わず差分のみ確認）
-- スケジュール実行（Chrome 起動時／毎日 指定時刻）
-- シンプルなログ確認（ポップアップで進行状況・エラーを表示）
+## ✨ 主な機能
 
-UI は日英の簡易 i18n に対応しています（`_locales/en`, `_locales/ja`）。
+- 📺 登録チャンネルごとに、直近の動画を最大 N 件（上限は 50 まで）収集
+- 🔄 既存プレイリストがあれば更新（不足の追加・不要の削除・順序整列）、なければ作成
+- 🎯 集約プレイリスト: 全チャンネルの最新動画を1つのプレイリストにまとめる
+- 🧪 ドライラン: 実際の変更を行わず差分のみ確認
+- ⏰ スケジュール実行: Chrome 起動時／毎日 指定時刻
+- 📊 リアルタイムプログレス表示とログ確認
+- 🌙 ダークモード対応
+- 🌍 多言語対応（日本語、英語、中国語、韓国語、フランス語、ドイツ語、スペイン語）
+
+## 🚀 クイックスタート
+
+### 前提条件
+
+- Node.js >= 18.0.0
+- npm >= 9.0.0
+- Chrome または Chromium ベースのブラウザ
+
+### インストール
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/charge0315/yt-buzz-ext.git
+cd yt-buzz-ext
+
+# 依存関係をインストール
+npm install
+
+# 拡張機能をビルド
+npm run build
+```
+
+### Chrome で読み込む
+
+1. `chrome://extensions/` を開く
+2. 「デベロッパーモード」を有効化
+3. 「パッケージ化されていない拡張機能を読み込む」をクリック
+4. `dist/` フォルダを選択
+
+詳細なセットアップ手順は [SETUP.md](SETUP.md) をご覧ください。
 
 ## セットアップ（OAuth 2.0）
 
@@ -57,14 +94,46 @@ YouTube Data API にアクセスします。以下の手順で OAuth クライ�
 - 毎日 指定時刻 に自動実行（`chrome.alarms` を使用）
 - 「今すぐ実行」ボタン（バックグラウンドで開始）
 
-## 実装メモ（内部仕様）
+## 🏗️ アーキテクチャ
 
-- `chrome.identity.getAuthToken` でアクセストークンを取得
-- YouTube Data API v3 を直接呼び出し
-	- 登録チャンネル一覧（subscriptions.list?mine=true）を取得
-	- 各チャンネルのアップロード一覧から動画 ID を収集
-	- 既存プレイリストがあれば差分同期（追加/削除/並び替え）、なければ作成
-- エラーハンドリングは指数バックオフで一部再試行（403/429/5xx などを対象）
+プロフェッショナルなモジュール構造で設計されています:
+
+```
+src/
+├── background/          # バックグラウンドサービスワーカー
+│   ├── api.js          # YouTube Data API ラッパー
+│   ├── auth.js         # OAuth2 認証管理
+│   ├── playlist.js     # プレイリスト操作
+│   └── scheduler.js    # スケジューリング
+├── utils/              # 共通ユーティリティ
+│   ├── cache.js        # 2層キャッシュシステム
+│   ├── constants.js    # 定数管理
+│   ├── logger.js       # ログ管理（永続化対応）
+│   ├── rateLimiter.js  # APIレート制限とクォータ管理
+│   └── retry.js        # 指数バックオフリトライ
+└── background.new.js   # メインエントリポイント
+```
+
+詳細は [ARCHITECTURE.md](ARCHITECTURE.md) をご覧ください。
+
+## 🎯 主要機能
+
+### **高度なエラーハンドリング**
+- 指数バックオフによる自動リトライ（403/429/5xx 対象）
+- クォータ管理で日次制限を超えないよう制御
+- 詳細なエラーログと通知
+
+### **パフォーマンス最適化**
+- メモリ＆ストレージの2層キャッシュ
+- APIコール数の最小化
+- 並行リクエストの制御
+- バッチ処理による効率化
+
+### **使いやすいUI**
+- リアルタイムプログレス表示
+- 色分けされたログビュー
+- 成功/エラー通知
+- ダークモード自動切替
 
 ## パーミッションと理由
 
@@ -90,13 +159,96 @@ YouTube Data API にアクセスします。以下の手順で OAuth クライ�
 - quotaExceeded / rateLimitExceeded
 	- 実行頻度や 1 チャンネルの上限を下げる、ドライランで差分を確認する、時間をおいて再実行する
 
-## 開発メモ
+## 🛠️ 開発
 
-- Manifest V3 / Service Worker ベース
-- 主要ファイル
-	- `src/background.js`: バックグラウンド（API コール、同期・スケジュール）
-	- `public/popup.html` + `src/popup.js`: ポップアップ UI
-	- `public/options.html`: オプション UI
-	- `_locales/*/messages.json`: 文言
+### 開発モード（ウォッチモード）
 
-PR/改善歓迎です（例: エラーメッセージの詳細化、UI 改善、フィルタ条件の拡張など）。
+```bash
+npm run dev
+```
+
+### テスト
+
+```bash
+# すべてのテストを実行
+npm test
+
+# ウォッチモード
+npm run test:watch
+
+# カバレッジレポート
+npm run test:coverage
+```
+
+### コード品質
+
+```bash
+# リント
+npm run lint
+npm run lint:fix
+
+# フォーマット
+npm run format
+npm run format:check
+```
+
+### ビルドとパッケージング
+
+```bash
+# プロダクションビルド
+npm run build
+
+# ZIP パッケージを作成
+npm run package
+```
+
+## 📚 ドキュメント
+
+- [SETUP.md](SETUP.md) - 詳細なセットアップ手順
+- [ARCHITECTURE.md](ARCHITECTURE.md) - アーキテクチャ設計
+- [CONTRIBUTING.md](CONTRIBUTING.md) - 貢献ガイドライン
+- [CHANGELOG.md](CHANGELOG.md) - 変更履歴
+- [IMPROVEMENTS.md](IMPROVEMENTS.md) - 実装された改善項目
+
+## 🧪 テスト
+
+- ユニットテスト（Jest）
+- Chrome API モック
+- 自動 CI/CD（GitHub Actions）
+- カバレッジレポート
+
+## 🌍 国際化
+
+以下の言語に対応しています:
+
+- 🇯🇵 日本語
+- 🇺🇸 英語
+- 🇨🇳 中国語（簡体字・繁体字）
+- 🇰🇷 韓国語
+- 🇫🇷 フランス語
+- 🇩🇪 ドイツ語
+- 🇪🇸 スペイン語
+
+## 🤝 貢献
+
+貢献を歓迎します！詳細は [CONTRIBUTING.md](CONTRIBUTING.md) をご覧ください。
+
+1. このリポジトリをフォーク
+2. フィーチャーブランチを作成 (`git checkout -b feature/amazing-feature`)
+3. 変更をコミット (`git commit -m 'feat: add amazing feature'`)
+4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
+5. プルリクエストを作成
+
+## 📄 ライセンス
+
+MIT License - 詳細は [LICENSE](LICENSE) ファイルをご覧ください。
+
+## 🙏 謝辞
+
+- [YouTube Data API](https://developers.google.com/youtube/v3)
+- Chrome Extensions Team
+- すべての貢献者の皆様
+
+## 📞 サポート
+
+問題や質問がある場合は、[GitHub Issues](https://github.com/charge0315/yt-buzz-ext/issues) でお知らせください。

@@ -1,0 +1,18 @@
+{
+  "EXT_NAME": { "message": "YT Buzz Ext" },
+  "EXT_DESC": { "message": "Créez et mettez à jour automatiquement des playlists YouTube à partir de vos chaînes abonnées." },
+  "UI_TITLE": { "message": "YT Buzz" },
+  "UI_UPDATE_MODE": { "message": "Mettre à jour les playlists existantes (créer si inexistant)" },
+  "UI_LIMIT": { "message": "Vidéos par chaîne" },
+  "UI_RUN": { "message": "Exécuter" },
+  "UI_DRYRUN": { "message": "Essai à blanc (aucune modification)" },
+  "OPT_RUN_ON_STARTUP": { "message": "Exécuter au démarrage du navigateur" },
+  "OPT_DAILY": { "message": "Exécution quotidienne à" },
+  "OPT_UNSET": { "message": "Non défini" },
+  "OPT_HOUR_SUFFIX": { "message": "h" },
+  "OPT_RUN_NOW": { "message": "Exécuter maintenant" },
+  "OPT_SAVED": { "message": "Paramètres enregistrés !" },
+  "OPT_RUN_NOW_STARTED": { "message": "Tâche démarrée. Consultez le journal contextuel pour plus de détails." },
+  "LOG_START": { "message": "Démarrage..." },
+  "LOG_DONE": { "message": "Tous les traitements sont terminés !" }
+}

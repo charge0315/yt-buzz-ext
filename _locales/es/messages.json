@@ -1,0 +1,18 @@
+{
+  "EXT_NAME": { "message": "YT Buzz Ext" },
+  "EXT_DESC": { "message": "Cree y actualice automáticamente listas de reproducción de YouTube desde sus canales suscritos." },
+  "UI_TITLE": { "message": "YT Buzz" },
+  "UI_UPDATE_MODE": { "message": "Actualizar listas existentes (crear si no existe)" },
+  "UI_LIMIT": { "message": "Vídeos por canal" },
+  "UI_RUN": { "message": "Ejecutar" },
+  "UI_DRYRUN": { "message": "Prueba en seco (sin cambios)" },
+  "OPT_RUN_ON_STARTUP": { "message": "Ejecutar al iniciar el navegador" },
+  "OPT_DAILY": { "message": "Ejecutar diariamente a las" },
+  "OPT_UNSET": { "message": "No establecido" },
+  "OPT_HOUR_SUFFIX": { "message": ":00" },
+  "OPT_RUN_NOW": { "message": "Ejecutar ahora" },
+  "OPT_SAVED": { "message": "¡Configuración guardada!" },
+  "OPT_RUN_NOW_STARTED": { "message": "Tarea iniciada. Consulte el registro emergente para más detalles." },
+  "LOG_START": { "message": "Iniciando..." },
+  "LOG_DONE": { "message": "¡Todo el procesamiento completado!" }
+}
