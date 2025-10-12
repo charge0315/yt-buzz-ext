@@ -14,9 +14,29 @@ export async function getAuthToken(interactive = true) {
   return new Promise((resolve, reject) => {
     chrome.identity.getAuthToken({ interactive }, (token) => {
       if (chrome.runtime.lastError) {
-        const error = new Error(chrome.runtime.lastError.message);
-        logManager.error(`Authentication failed: ${error.message}`);
-        reject(error);
+        const errorMessage = chrome.runtime.lastError.message;
+        
+        // 特定のエラーメッセージに対する対処法を提供
+        if (errorMessage.includes('bad client id')) {
+          const setupError = new Error(
+            'OAuth Client ID が無効です。Google Cloud Project の設定を確認してください。\n' +
+            '詳細: docs/GOOGLE_CLOUD_SETUP.md を参照\n' +
+            '設定コマンド: npm run setup'
+          );
+          logManager.error(`Authentication setup error: ${setupError.message}`);
+          reject(setupError);
+        } else if (errorMessage.includes('OAuth2 request failed')) {
+          const configError = new Error(
+            'OAuth2 設定に問題があります。Extension ID と Client ID の対応を確認してください。\n' +
+            'Google Cloud Console でOAuth設定を更新する必要があります。'
+          );
+          logManager.error(`OAuth configuration error: ${configError.message}`);
+          reject(configError);
+        } else {
+          const error = new Error(errorMessage);
+          logManager.error(`Authentication failed: ${error.message}`);
+          reject(error);
+        }
       } else if (!token) {
         const error = new Error('Failed to acquire auth token');
         logManager.error(error.message);
@@ -32,14 +52,16 @@ export async function getAuthToken(interactive = true) {
 /**
  * Remove cached authentication token
  * @param {string} token - Token to remove
+ * @returns {Promise<void>}
  */
 export async function removeCachedToken(token) {
   return new Promise((resolve, reject) => {
     chrome.identity.removeCachedAuthToken({ token }, () => {
       if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
+        reject(new Error(chrome.runtime.lastError.message || 'Failed to remove cached token'));
       } else {
         logManager.info('Token removed from cache');
+        // @ts-ignore - JSDoc indicates this resolve can be called without arguments
         resolve();
       }
     });
@@ -59,7 +81,8 @@ export async function revokeToken(token) {
     await removeCachedToken(token);
     await logManager.info('Token revoked successfully');
   } catch (error) {
-    await logManager.error(`Failed to revoke token: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await logManager.error(`Failed to revoke token: ${errorMessage}`);
     throw error;
   }
 }

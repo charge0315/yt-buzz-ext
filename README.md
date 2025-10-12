@@ -26,16 +26,38 @@ YouTube の「登録チャンネル」を走査し、各チャンネルの直近
 - Node.js >= 18.0.0
 - npm >= 9.0.0
 - Chrome または Chromium ベースのブラウザ
+- Google Cloud Project（YouTube Data API v3 用）
 
-### インストール
+### 初期設定
 
+1. **リポジトリをクローン**
 ```bash
-# リポジトリをクローン
 git clone https://github.com/charge0315/yt-buzz-ext.git
 cd yt-buzz-ext
+```
 
-# 依存関係をインストール
+2. **依存関係をインストール**
+```bash
 npm install
+```
+
+3. **Google Cloud Project の設定**
+```bash
+# 設定ファイルを作成
+cp .env.example .env
+```
+
+`.env` ファイルを編集して Google Client ID を設定：
+```env
+GOOGLE_CLIENT_ID=your-actual-client-id.apps.googleusercontent.com
+```
+
+📖 詳細な設定手順は [`docs/GOOGLE_CLOUD_SETUP.md`](docs/GOOGLE_CLOUD_SETUP.md) を参照
+
+4. **設定の適用とビルド**
+```bash
+# 設定を適用
+npm run setup
 
 # 拡張機能をビルド
 npm run build

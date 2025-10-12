@@ -13,7 +13,7 @@
     "type": "module"
   },
   "oauth2": {
-    "client_id": "743821950729-buo6q06u0tlh8v2d9rn8riufi3leqesm.apps.googleusercontent.com",
+    "client_id": "YOUR_GOOGLE_CLIENT_ID_HERE",
     "scopes": [
       "https://www.googleapis.com/auth/youtube"
     ]
