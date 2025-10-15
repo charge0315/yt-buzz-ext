@@ -5,7 +5,7 @@
   "description": "__MSG_EXT_DESC__",
   "default_locale": "ja",
   "action": {
-  "default_title": "__MSG_EXT_NAME__",
+    "default_title": "__MSG_EXT_NAME__",
     "default_popup": "public/popup.html"
   },
   "background": {
@@ -13,7 +13,7 @@
     "type": "module"
   },
   "oauth2": {
-    "client_id": "YOUR_GOOGLE_CLIENT_ID_HERE",
+    "client_id": "454103117447-995epasrc9fs19g77oobbep37v47u270.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/youtube"
     ]

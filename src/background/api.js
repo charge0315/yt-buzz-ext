@@ -60,9 +60,8 @@ export async function getSubscriptions(token, useCache = true) {
   }
 
   const items = [];
-  let pageToken;
-
-  while (true) {
+  let pageToken = undefined;
+  do {
     const response = await rateLimiter.execute(
       () =>
         withRetry(() =>
@@ -73,14 +72,9 @@ export async function getSubscriptions(token, useCache = true) {
         ),
       QUOTA_COSTS.LIST
     );
-
     items.push(...(response.items || []));
     pageToken = response.nextPageToken;
-
-    if (!pageToken) {
-      break;
-    }
-  }
+  } while (pageToken);
 
   await cacheManager.set(cacheKey, items);
   await logManager.info(`Fetched ${items.length} subscriptions`);
@@ -125,11 +119,9 @@ export async function getChannel(token, channelId, useCache = true) {
 export async function getChannelsBatch(token, channelIds, useCache = true) {
   const batchSize = 50;
   const results = [];
-
   for (let i = 0; i < channelIds.length; i += batchSize) {
     const batch = channelIds.slice(i, i + batchSize);
     const ids = batch.join(',');
-
     const response = await rateLimiter.execute(
       () =>
         withRetry(() =>
@@ -140,7 +132,6 @@ export async function getChannelsBatch(token, channelIds, useCache = true) {
         ),
       QUOTA_COSTS.LIST
     );
-
     results.push(...(response.items || []));
   }
 
@@ -180,32 +171,26 @@ export async function getPlaylistItems(token, playlistId) {
     }
 
     pageToken = response.nextPageToken;
-    if (!pageToken) {
-      break;
-    }
-  }
-
-  return results;
-}
-
-/**
- * Find user's playlist by title
- */
-export async function findPlaylistByTitle(token, title) {
-  let pageToken;
-
-  while (true) {
-    const response = await rateLimiter.execute(
-      () =>
-        withRetry(() =>
-          apiFetch('/playlists', {
-            token,
-            params: { part: 'snippet', mine: true, maxResults: 50, pageToken },
-          })
-        ),
-      QUOTA_COSTS.LIST
-    );
-
+    let pageToken = undefined;
+    do {
+      const response = await rateLimiter.execute(
+        () =>
+          withRetry(() =>
+            apiFetch('/playlistItems', {
+              token,
+              params: {
+                part: 'snippet,contentDetails',
+                playlistId,
+                maxResults: 50,
+                pageToken,
+              },
+            })
+          ),
+        QUOTA_COSTS.LIST
+      );
+      results.push(...(response.items || []));
+      pageToken = response.nextPageToken;
+    } while (pageToken);
     for (const item of response.items || []) {
       if (item?.snippet?.title === title) {
         return item;
@@ -213,32 +198,25 @@ export async function findPlaylistByTitle(token, title) {
     }
 
     pageToken = response.nextPageToken;
-    if (!pageToken) {
-      break;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Create a playlist
- */
-export async function createPlaylist(token, title, description, privacyStatus = 'private') {
-  const response = await rateLimiter.execute(
-    () =>
-      withRetry(() =>
-        apiFetch('/playlists', {
-          token,
-          method: 'POST',
-          params: { part: 'snippet,status' },
-          body: {
-            snippet: { title, description },
-            status: { privacyStatus },
-          },
-        })
-      ),
-    QUOTA_COSTS.INSERT
+    let pageToken = undefined;
+    do {
+      const response = await rateLimiter.execute(
+        () =>
+          withRetry(() =>
+            apiFetch('/playlists', {
+              token,
+              params: { part: 'snippet', mine: true, maxResults: 50, pageToken },
+            })
+          ),
+        QUOTA_COSTS.LIST
+      );
+      for (const item of response.items || []) {
+        if (item?.snippet?.title === title) {
+          return item;
+        }
+      }
+      pageToken = response.nextPageToken;
+    } while (pageToken);
   );
 
   await logManager.success(`Created playlist: ${title}`);

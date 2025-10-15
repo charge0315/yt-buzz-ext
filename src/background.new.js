@@ -30,11 +30,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
     try {
       switch (message?.type) {
-        case MESSAGE_TYPES.RUN:
+        case MESSAGE_TYPES.RUN: {
           await logManager.info('Received RUN message');
           const result = await runJob(message.payload || {});
           sendResponse(result);
           break;
+        }
 
         case MESSAGE_TYPES.SCHEDULE_UPDATE:
           await logManager.info('Received SCHEDULE_UPDATE message');
@@ -46,8 +47,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ error: 'Unknown message type' });
       }
     } catch (error) {
-      await logManager.error(`Message handler error: ${error.message}`);
-      sendResponse({ error: error.message });
+      const msg = typeof error === 'object' && error && 'message' in error ? error.message : String(error);
+      await logManager.error(`Message handler error: ${msg}`);
+      sendResponse({ error: msg });
     }
   })();
 

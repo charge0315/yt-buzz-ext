@@ -15,7 +15,7 @@ export async function getAuthToken(interactive = true) {
     chrome.identity.getAuthToken({ interactive }, (token) => {
       if (chrome.runtime.lastError) {
         const errorMessage = chrome.runtime.lastError.message;
-        
+
         // 特定のエラーメッセージに対する対処法を提供
         if (errorMessage.includes('bad client id')) {
           const setupError = new Error(

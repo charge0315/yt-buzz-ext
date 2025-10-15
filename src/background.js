@@ -1,8 +1,13 @@
-const SCOPES = [
-  'https://www.googleapis.com/auth/youtube'
-];
+
+/**
+ * @type {string}
+ */
 const API_BASE = 'https://www.googleapis.com/youtube/v3';
 
+
+/**
+ * @param {string} msg
+ */
 function sendLog(msg) {
   chrome.runtime.sendMessage({ type: 'LOG', payload: msg }).catch(() => {});
 }
@@ -21,10 +26,16 @@ async function getAuthTokenInteractive(interactive = true) {
   });
 }
 
+/**
+ * @param {string} path
+ * @param {{ method?: string, params?: Object, body?: any, token: string }} opts
+ */
 async function apiFetch(path, { method='GET', params={}, body, token }) {
   const url = new URL(API_BASE + path);
   Object.entries(params).forEach(([k,v]) => {
-    if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
+    if (v !== undefined && v !== null) {
+url.searchParams.set(k, String(v));
+}
   });
   const res = await fetch(url.toString(), {
     method,
@@ -36,6 +47,7 @@ async function apiFetch(path, { method='GET', params={}, body, token }) {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
+    /** @type {Error & { status?: number, body?: string }} */
     const err = new Error(`API ${method} ${url.pathname}: ${res.status} ${res.statusText} ${text}`);
     err.status = res.status;
     err.body = text;
@@ -44,55 +56,77 @@ async function apiFetch(path, { method='GET', params={}, body, token }) {
   return res.json();
 }
 
+/**
+ * @param {() => Promise<any>} fn
+ * @param {number} [maxAttempts]
+ * @param {number} [baseDelayMs]
+ */
 async function withRetry(fn, maxAttempts = 5, baseDelayMs = 1000) {
   let attempt = 0;
-  while (true) {
+  while (attempt < maxAttempts) {
     try {
       return await fn();
     } catch (e) {
       attempt++;
-      // Retry on 403 (rate/quota), 429, and 5xx; otherwise rethrow
-      const retryable = [403, 429].includes(e.status) || (e.status >= 500 && e.status < 600) || !e.status;
+      // 型ガード
+      const status = typeof e === 'object' && e && 'status' in e ? e.status : undefined;
+      const message = typeof e === 'object' && e && 'message' in e ? e.message : String(e);
+      const retryable = [403, 429].includes(status) || (status >= 500 && status < 600) || !status;
       if (!retryable || attempt >= maxAttempts) {
-        sendLog(`エラー: ${e.message}`);
+        sendLog(`エラー: ${message}`);
         throw e;
       }
       const jitter = Math.random()*300;
       const delay = baseDelayMs * Math.pow(2, attempt-1) + jitter;
-      sendLog(`一時的なエラーのため再試行します（${attempt}/${maxAttempts-1}）: ${e.message}`);
+      sendLog(`一時的なエラーのため再試行します（${attempt}/${maxAttempts-1}）: ${message}`);
       await new Promise(r => setTimeout(r, delay));
     }
   }
 }
 
-function durationToSeconds(iso) {
-  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso || '');
-  if (!m) return 0;
-  const h = parseInt(m[1] || '0',10);
-  const min = parseInt(m[2] || '0',10);
-  const s = parseInt(m[3] || '0',10);
-  return h*3600 + min*60 + s;
-}
+/**
+ * @param {string} iso
+ * @returns {number}
+ */
 
+/**
+ * @param {string} token
+ * @returns {Promise<any[]>}
+ */
+/**
+ * @param {string} token
+ * @returns {Promise<any[]>}
+ */
 async function getMySubscriptions(token) {
   const items = [];
-  let pageToken;
-  while (true) {
-    const resp = await withRetry(() => apiFetch('/subscriptions', {
-      token,
-      params: { part: 'snippet', mine: true, maxResults: 50, pageToken }
-    }));
-    items.push(...(resp.items || []));
-    pageToken = resp.nextPageToken;
-    if (!pageToken) break;
-  }
+    /** @type {string|undefined} */
+    let pageToken = undefined;
+    do {
+      const resp = await withRetry(() => apiFetch('/subscriptions', {
+        token,
+        params: { part: 'snippet', mine: true, maxResults: 50, pageToken }
+      }));
+      items.push(...(resp.items || []));
+      pageToken = resp.nextPageToken;
+    } while (pageToken);
   return items;
 }
 
+/**
+ * @param {string} token
+ * @param {string} playlistId
+ * @returns {Promise<any[]>}
+ */
+/**
+ * @param {string} token
+ * @param {string} playlistId
+ * @returns {Promise<any[]>}
+ */
 async function listPlaylistItems(token, playlistId) {
+  /** @type {string|undefined} */
+  let pageToken = undefined;
   const results = [];
-  let pageToken;
-  while (true) {
+  do {
     const resp = await withRetry(() => apiFetch('/playlistItems', {
       token,
       params: { part: 'snippet,contentDetails', playlistId, maxResults: 50, pageToken }
@@ -105,58 +139,92 @@ async function listPlaylistItems(token, playlistId) {
       });
     }
     pageToken = resp.nextPageToken;
-    if (!pageToken) break;
-  }
+  } while (pageToken);
   return results;
 }
 
+/**
+ * @param {string} token
+ * @param {string} title
+ * @returns {Promise<any|null>}
+ */
 async function findMyPlaylistByTitle(token, title) {
-  let pageToken;
-  while (true) {
+  /** @type {string|undefined} */
+  let pageToken = undefined;
+  do {
     const resp = await withRetry(() => apiFetch('/playlists', {
       token,
       params: { part: 'snippet', mine: true, maxResults: 50, pageToken }
     }));
     for (const it of (resp.items || [])) {
-      if (it?.snippet?.title === title) return it;
+      if (it?.snippet?.title === title) {
+        return it;
+      }
     }
     pageToken = resp.nextPageToken;
-    if (!pageToken) break;
-  }
+  } while (pageToken);
   return null;
 }
 
+/**
+ * @param {string} token
+ * @param {string} uploadsPlaylistId
+ * @param {number} limit
+ * @returns {Promise<string[]>}
+ */
 async function fetchRecentVideos(token, uploadsPlaylistId, limit) {
   const pl = await withRetry(() => apiFetch('/playlistItems', {
     token,
     params: { part: 'contentDetails', playlistId: uploadsPlaylistId, maxResults: 50 }
   }));
-  const orderedIds = (pl.items || []).map(i => i.contentDetails?.videoId).filter(Boolean);
-  if (!orderedIds.length) return [];
+  const orderedIds = (pl.items || []).map((/** @type {{contentDetails?: {videoId?: string}}} */i) => i.contentDetails?.videoId).filter(Boolean);
+  if (!orderedIds.length) {
+return [];
+}
   return orderedIds.slice(0, Math.max(0, Math.min(limit, 50)));
 }
 
+/**
+ * @param {string} token
+ * @param {string} uploadsPlaylistId
+ * @returns {Promise<{videoId: string, publishedAt: string|null}|null>}
+ */
 async function fetchLatestVideo(token, uploadsPlaylistId) {
   const pl = await withRetry(() => apiFetch('/playlistItems', {
     token,
     params: { part: 'contentDetails', playlistId: uploadsPlaylistId, maxResults: 1 }
   }));
   const it = pl.items?.[0];
-  if (!it) return null;
+  if (!it) {
+return null;
+}
   const vid = it.contentDetails?.videoId;
   const publishedAt = it.contentDetails?.videoPublishedAt || null;
-  if (!vid) return null;
+  if (!vid) {
+return null;
+}
   return { videoId: vid, publishedAt };
 }
 
+/**
+ * @param {string} token
+ * @param {string} playlistId
+ * @param {string[]} targetIds
+ * @param {{ dryRun?: boolean }} [opts]
+ * @returns {Promise<number>}
+ */
 async function reorderPlaylistToMatch(token, playlistId, targetIds, { dryRun } = {}) {
   const items = await listPlaylistItems(token, playlistId);
   const map = new Map(items.map(it => [it.videoId, { id: it.playlistItemId, pos: it.position }]));
   let updated = 0;
   for (let i = 0; i < targetIds.length; i++) {
     const vid = targetIds[i];
-    if (!map.has(vid)) continue;
-    const { id, pos } = map.get(vid);
+    if (!map.has(vid)) {
+      continue;
+    }
+    const item = map.get(vid);
+    const id = item && item.id;
+    const pos = item && item.pos;
     if (pos !== i) {
       if (dryRun) {
         sendLog(`[DRY-RUN] 並び替え: ${vid} -> pos ${i}`);
@@ -173,6 +241,13 @@ async function reorderPlaylistToMatch(token, playlistId, targetIds, { dryRun } =
   return updated;
 }
 
+/**
+ * @param {string} token
+ * @param {string} playlistId
+ * @param {string[]} targetIds
+ * @param {{ dryRun?: boolean }} [opts]
+ * @returns {Promise<{add: number, del: number}>}
+ */
 async function syncPlaylistItems(token, playlistId, targetIds, { dryRun } = {}) {
   const items = await listPlaylistItems(token, playlistId);
   const currentIds = items.map(x => x.videoId);
@@ -193,7 +268,9 @@ async function syncPlaylistItems(token, playlistId, targetIds, { dryRun } = {}) 
   }
   for (const vid of toRemove) {
     const pid = idToItem.get(vid);
-    if (!pid) continue;
+    if (!pid) {
+continue;
+}
     if (dryRun) {
       sendLog(`[DRY-RUN] 削除: ${vid} (playlistItemId=${pid})`);
     } else {
@@ -203,6 +280,12 @@ async function syncPlaylistItems(token, playlistId, targetIds, { dryRun } = {}) 
   return { add: toAdd.length, del: toRemove.length };
 }
 
+/**
+ * @param {string} token
+ * @param {string} channelId
+ * @param {string} channelTitle
+ * @param {{ update: boolean, limit: number, dryRun: boolean }} opts
+ */
 async function createOrUpdateForChannel(token, channelId, channelTitle, { update, limit, dryRun }) {
   const ch = await withRetry(() => apiFetch('/channels', { token, params: { part: 'contentDetails', id: channelId } }));
   const uploads = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
@@ -245,6 +328,11 @@ async function createOrUpdateForChannel(token, channelId, channelTitle, { update
   }
 }
 
+/**
+ * @param {string} token
+ * @param {Array<{videoId: string, publishedAt: string|null}>} latestItems
+ * @param {{ title?: string, dryRun?: boolean, update?: boolean }} [opts]
+ */
 async function createOrUpdateAggregatePlaylist(token, latestItems, { title = '登録チャンネル - 最新', dryRun = false, update = true } = {}) {
   // latestItems: Array<{ videoId, publishedAt }>
   if (!latestItems.length) {
@@ -272,7 +360,7 @@ async function createOrUpdateAggregatePlaylist(token, latestItems, { title = '�
   const pl = await withRetry(() => apiFetch('/playlists', {
     token, method: dryRun ? 'GET' : 'POST',
     params: dryRun ? { part: 'snippet', mine: true, maxResults: 1 } : { part: 'snippet,status' },
-    body: dryRun ? undefined : { snippet: { title, description: `登録チャンネルの最新動画を集めた再生リストです。` }, status: { privacyStatus: 'private' } }
+    body: dryRun ? undefined : { snippet: { title, description: '登録チャンネルの最新動画を集めた再生リストです。' }, status: { privacyStatus: 'private' } }
   }));
   if (dryRun) {
     sendLog(`[DRY-RUN] 集約再生リスト作成: '${title}'（${targetIds.length}件を追加予定）`);
@@ -288,6 +376,10 @@ async function createOrUpdateAggregatePlaylist(token, latestItems, { title = '�
   }
 }
 
+/**
+ * @param {{ limit?: number, update?: boolean, dryRun?: boolean }} [opts]
+ * @returns {Promise<{message: string}>}
+ */
 async function runJob({ limit = 10, update = true, dryRun = false } = {}) {
   const token = await getAuthTokenInteractive(true);
   const meSubs = await getMySubscriptions(token);
@@ -297,17 +389,21 @@ async function runJob({ limit = 10, update = true, dryRun = false } = {}) {
   for (const sub of meSubs) {
     const channelId = sub?.snippet?.resourceId?.channelId;
     const channelTitle = sub?.snippet?.title;
-    if (!channelId) continue;
+    if (!channelId) {
+continue;
+}
     await createOrUpdateForChannel(token, channelId, channelTitle, { update, limit, dryRun });
-    try {
-      // collect latest one per channel for aggregate list
-      const ch = await withRetry(() => apiFetch('/channels', { token, params: { part: 'contentDetails', id: channelId } }));
-      const uploads = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-      if (uploads) {
-        const latest = await fetchLatestVideo(token, uploads);
-        if (latest?.videoId) aggregate.push(latest);
-      }
-    } catch (e) {
+    let first = true;
+    do {
+      const resp = await withRetry(() => apiFetch('/subscriptions', {
+        token,
+        params: { part: 'snippet', mine: true, maxResults: 50, pageToken }
+      }));
+      items.push(...(resp.items || []));
+      pageToken = resp.nextPageToken;
+      if (!pageToken) break;
+      first = false;
+    } while (pageToken || first);
       // non-fatal for aggregate
     }
     processed++;
@@ -319,7 +415,7 @@ async function runJob({ limit = 10, update = true, dryRun = false } = {}) {
   try {
     await createOrUpdateAggregatePlaylist(token, aggregate, { title: '登録チャンネル - 最新', dryRun, update });
   } catch (e) {
-    sendLog(`集約プレイリスト作成/更新エラー: ${e?.message || e}`);
+  sendLog(`集約プレイリスト作成/更新エラー: ${typeof e === 'object' && e && 'message' in e ? e.message : String(e)}`);
   }
   return { message: 'すべての処理が完了しました。' };
 }
@@ -333,7 +429,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const res = await runJob(payload);
         sendResponse(res);
       } catch (e) {
-        sendResponse({ message: `エラー: ${e?.message || e}` });
+  sendResponse({ message: `エラー: ${typeof e === 'object' && e && 'message' in e ? e.message : String(e)}` });
       }
       return;
     }
@@ -342,35 +438,39 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sendResponse({ ok: true });
       return;
     }
-  })();
-  return true; // async
-});
-
-chrome.runtime.onInstalled.addListener(async () => {
-  await scheduleFromSettings();
-});
-
-chrome.runtime.onStartup.addListener(async () => {
-  const { runOnStartup=false } = await chrome.storage.sync.get(['runOnStartup']);
-  if (runOnStartup) {
-    try {
-      const defaults = await chrome.storage.sync.get(['limit','update','dryRun']);
-      await runJob({ limit: defaults.limit ?? 10, update: defaults.update ?? true, dryRun: !!defaults.dryRun });
-    } catch (e) {
-      sendLog(`起動時実行エラー: ${e?.message || e}`);
+  let first = true;
+  do {
+    const resp = await withRetry(() => apiFetch('/playlistItems', {
+      token,
+      params: { part: 'snippet,contentDetails', playlistId, maxResults: 50, pageToken }
+    }));
+    for (const it of (resp.items || [])) {
+      results.push({
+        playlistItemId: it.id,
+        videoId: it.contentDetails?.videoId,
+        position: it.snippet?.position ?? 0,
+      });
     }
-  }
-});
-
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm?.name === 'daily-run') {
-    try {
-      const defaults = await chrome.storage.sync.get(['limit','update','dryRun']);
-      await runJob({ limit: defaults.limit ?? 10, update: defaults.update ?? true, dryRun: !!defaults.dryRun });
-    } catch (e) {
-      sendLog(`スケジュール実行エラー: ${e?.message || e}`);
-    }
-  }
+    pageToken = resp.nextPageToken;
+    if (!pageToken) break;
+    first = false;
+  } while (pageToken || first);
+  sendLog(`起動時実行エラー: ${typeof e === 'object' && e && 'message' in e ? e.message : String(e)}`);
+    let first = true;
+    do {
+      const resp = await withRetry(() => apiFetch('/playlists', {
+        token,
+        params: { part: 'snippet', mine: true, maxResults: 50, pageToken }
+      }));
+      for (const it of (resp.items || [])) {
+        if (it?.snippet?.title === title) {
+          return it;
+        }
+      }
+      pageToken = resp.nextPageToken;
+      if (!pageToken) break;
+      first = false;
+    } while (pageToken || first);
 });
 
 async function scheduleFromSettings() {
